@@ -57,7 +57,7 @@ class MazeGame {
         this.isTransitioning = false;
         this.congratsTimeout = null;
         this.coloredImage = new Image();
-        this.coloredImage.src = './images/紫禁城平面圖上色.png';
+        this.coloredImage.src = './images/星鳴特攻.png';
         // 綁定觸控事件
         this.bindTouchEvents();
         this.showRulesModal();
@@ -76,6 +76,13 @@ class MazeGame {
         // 添加搖桿狀態
         this.joystickSpeed = 5; // 調整移動速度
         this.bindJoystickEvents();
+
+        
+        // 添加描述面板的引用
+        this.descriptionPanel = document.getElementById('descriptionPanel');
+        if (!this.descriptionPanel) {
+            this.createDescriptionPanel();
+        }
         
         this.bindEvents();
         this.loadMazeImage();
@@ -148,7 +155,7 @@ class MazeGame {
         function initKeyboardControls() {
             // 移動速度
             const moveSpeed = 20; // 畫面移動速度
-            const targetSpeed = 5; // 目標移動速度
+            const targetSpeed = 8; // 目標移動速度
             
             // 按鍵狀態
             const keyState = {
@@ -454,6 +461,34 @@ class MazeGame {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    handleTouchStart(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasScaleX = this.canvas.width / rect.width;
+        const canvasScaleY = this.canvas.height / rect.height;
+        
+        const touchX = (touch.clientX - rect.left) * canvasScaleX;
+        const touchY = (touch.clientY - rect.top) * canvasScaleY;
+    
+        // 檢查建築物點擊
+        [this.locations1, this.locations2, this.locations3, this.locations4, this.locations5].forEach(locations => {
+            locations.forEach(loc => {
+                const scaledX = loc.x * this.zoomFactor + this.offsetX;
+                const scaledY = loc.y * this.zoomFactor + this.offsetY;
+                const scaledWidth = loc.width * this.zoomFactor;
+                const scaledHeight = loc.height * this.zoomFactor;
+    
+                if (
+                    touchX >= scaledX &&
+                    touchX <= scaledX + scaledWidth &&
+                    touchY >= scaledY &&
+                    touchY <= scaledY + scaledHeight
+                ) {
+                    this.showDescription(loc.text, loc.description);
+                }
+            });
+        });
+    }
+
     handleTouchMove(touch) { 
         const rect = this.canvas.getBoundingClientRect();
         const canvasScaleX = this.canvas.width / rect.width;
@@ -541,25 +576,25 @@ handlePinchZoom(touches) {
 
     
 
-    initializeCanvas() {
-        // 設定固定的畫布大小
-        const CANVAS_WIDTH = 1980;  // 或其他你想要的固定寬度
-        const CANVAS_HEIGHT = 1080; // 或其他你想要的固定高度
-        
-        this.canvas.width = CANVAS_WIDTH;
-        this.canvas.height = CANVAS_HEIGHT;
-        
-        // 使用 CSS 來控制顯示大小，保持長寬比
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = 'auto';
-        this.canvas.style.maxWidth = '100%';
-        this.canvas.style.objectFit = 'contain';
-        
-        // 防止畫布被壓縮
-        this.canvas.style.imageRendering = 'pixelated';
-        this.canvas.style.imageRendering = '-moz-crisp-edges';
-        this.canvas.style.imageRendering = 'crisp-edges';
-    }
+initializeCanvas() {
+    // 設定固定的畫布大小
+    const CANVAS_WIDTH = 1980;  // 或其他你想要的固定寬度
+    const CANVAS_HEIGHT = 1080; // 或其他你想要的固定高度
+    
+    this.canvas.width = CANVAS_WIDTH;
+    this.canvas.height = CANVAS_HEIGHT;
+    
+    // 使用 CSS 來控制顯示大小，保持長寬比
+    this.canvas.style.width = '100%';
+    this.canvas.style.height = 'auto';
+    this.canvas.style.maxWidth = '100%';
+    this.canvas.style.objectFit = 'contain';
+    
+    // 防止畫布被壓縮
+    this.canvas.style.imageRendering = 'pixelated';
+    this.canvas.style.imageRendering = '-moz-crisp-edges';
+    this.canvas.style.imageRendering = 'crisp-edges';
+}
 
     // 判斷特定座標是否為障礙物
     isPointObstacle(x, y) {
@@ -750,7 +785,7 @@ handlePinchZoom(touches) {
             this.generateCollisionMap();
     
             // 可視化碰撞地圖
-            //this.visualizeCollisionMap();
+            this.visualizeCollisionMap();
     
             // 開始遊戲循環
             this.startGameLoop();
@@ -1024,6 +1059,49 @@ hideDescription() {
         this.isDragging = false;
     }
 
+    handleMouseClick(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasScaleX = this.canvas.width / rect.width;
+        const canvasScaleY = this.canvas.height / rect.height;
+        
+        const adjustedMouseX = (event.clientX - rect.left) * canvasScaleX;
+        const adjustedMouseY = (event.clientY - rect.top) * canvasScaleY;
+    
+        // 創建一個通用函數來檢查是否點擊了地點物件
+        const isLocationClicked = (location) => {
+            const scaledX = location.x * this.zoomFactor + this.offsetX;
+            const scaledY = location.y * this.zoomFactor + this.offsetY;
+            const scaledWidth = location.width * this.zoomFactor;
+            const scaledHeight = location.height * this.zoomFactor;
+    
+            return (
+                adjustedMouseX >= scaledX &&
+                adjustedMouseX <= scaledX + scaledWidth &&
+                adjustedMouseY >= scaledY &&
+                adjustedMouseY <= scaledY + scaledHeight
+            );
+        };
+    
+        // 檢查所有位置組
+        const locationGroups = [
+            this.locations1,
+            this.locations2, 
+            this.locations3,
+            this.locations4,
+            this.locations5
+        ];
+    
+        // 遍歷所有位置組
+        for (const locations of locationGroups) {
+            const clickedLocation = locations.find(isLocationClicked);
+            if (clickedLocation) {
+                this.showDescription(clickedLocation.text, clickedLocation.description);
+            }
+        }
+    }
+
+    
+
     // 更新縮放處理
     handleWheel(event) {
         event.preventDefault();
@@ -1214,6 +1292,9 @@ hideDescription() {
             this.ctx.restore();
         }
 
+        // 繪製地點物件
+        this.drawLocations();
+
         // 繪製目標和軌跡
         this.drawTarget();
 
@@ -1255,6 +1336,67 @@ hideDescription() {
             this.drawMessage(gameState.error, 'red');
         }
     }
+
+    // 繪製地點物件
+drawLocations() {
+    // 定義不同位置組的字體大小
+    const fontSizes = {
+        locations1: 12,
+        locations2: 24,
+        locations3: 12, 
+        locations4: 6,
+        locations5: 6
+    };
+    
+    // 定義要垂直排列文字的位置組
+    const verticalTextLocations = ['locations3', 'locations5'];
+    
+    // 遍歷所有位置組
+    for (const locationType in fontSizes) {
+        if (!this[locationType] || !Array.isArray(this[locationType])) continue;
+        
+        const fontSize = fontSizes[locationType] * this.zoomFactor;
+        const isVertical = verticalTextLocations.includes(locationType);
+        
+        this[locationType].forEach(loc => {
+            const scaledX = loc.x * this.zoomFactor + this.offsetX;
+            const scaledY = loc.y * this.zoomFactor + this.offsetY;
+            const scaledWidth = loc.width * this.zoomFactor;
+            const scaledHeight = loc.height * this.zoomFactor;
+
+            // 繪製半透明背景
+            this.ctx.fillStyle = loc.color;
+            this.ctx.fillRect(scaledX, scaledY, scaledWidth, scaledHeight);
+
+            // 設置文字樣式
+            this.ctx.fillStyle = 'black';
+            this.ctx.font = `bold ${fontSize}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            if (isVertical) {
+                // 垂直排列文字
+                const chars = loc.text.split('');
+                const totalHeight = chars.length * fontSize;
+                const startY = scaledY + (scaledHeight - totalHeight) / 2;
+                const centerX = scaledX + scaledWidth / 2;
+
+                // 逐個繪製字符
+                chars.forEach((char, index) => {
+                    const charY = startY + (index + 0.5) * fontSize;
+                    this.ctx.fillText(char, centerX, charY);
+                });
+            } else {
+                // 水平排列文字
+                this.ctx.fillText(
+                    loc.text,
+                    scaledX + scaledWidth / 2,
+                    scaledY + scaledHeight / 2
+                );
+            }
+        });
+    }
+}
     
     visualizeCollisionMap() {
         if (!this.collisionMap) {
