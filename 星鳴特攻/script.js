@@ -625,46 +625,78 @@ initializeCanvas() {
         if (!this.isLineCollidingWithObstacle(currentX, currentY, targetX, targetY)) {
             return { x: targetX, y: targetY };
         }
-
-        // 嘗試水平移動
-        if (!this.isLineCollidingWithObstacle(currentX, currentY, targetX, currentY)) {
-            return { x: targetX, y: currentY };
-        }
-
-        // 嘗試垂直移動
-        if (!this.isLineCollidingWithObstacle(currentX, currentY, currentX, targetY)) {
-            return { x: currentX, y: targetY };
-        }
-
-        // 如果水平和垂直都不行，嘗試斜向移動
+    
+        // 計算移動向量
         const dx = targetX - currentX;
         const dy = targetY - currentY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance < this.joystickSpeed / 2) {
-            return { x: currentX, y: currentY }; // 如果太近，保持原位
+        // 嘗試水平移動
+        if (Math.abs(dx) > 0.1 && !this.isLineCollidingWithObstacle(currentX, currentY, targetX, currentY)) {
+            return { x: targetX, y: currentY };
         }
-
-        // 嘗試不同角度的移動
-        const angles = [45, 30, 60, 15, 75]; // 優先嘗試接近原方向的角度
-        for (const angle of angles) {
-            // 順時針嘗試
-            const cwRadians = (Math.atan2(dy, dx) + angle * Math.PI / 180) % (2 * Math.PI);
-            const cwX = currentX + Math.cos(cwRadians) * this.joystickSpeed;
-            const cwY = currentY + Math.sin(cwRadians) * this.joystickSpeed;
-            if (!this.isLineCollidingWithObstacle(currentX, currentY, cwX, cwY)) {
-                return { x: cwX, y: cwY };
+    
+        // 嘗試垂直移動
+        if (Math.abs(dy) > 0.1 && !this.isLineCollidingWithObstacle(currentX, currentY, currentX, targetY)) {
+            return { x: currentX, y: targetY };
+        }
+        
+        // 如果主要方向都不行，嘗試對角線滑動
+        // 這里我們將依次嘗試8個方向，優先嘗試接近目標方向的移動
+        
+        // 計算八個方向的單位向量
+        const directions = [
+            { x: 1, y: 0 },   // 右
+            { x: 1, y: 1 },   // 右下
+            { x: 0, y: 1 },   // 下
+            { x: -1, y: 1 },  // 左下
+            { x: -1, y: 0 },  // 左
+            { x: -1, y: -1 }, // 左上
+            { x: 0, y: -1 },  // 上
+            { x: 1, y: -1 }   // 右上
+        ];
+        
+        // 計算出原始方向與目標的夾角
+        const targetAngle = Math.atan2(dy, dx);
+        
+        // 計算每個方向的角度
+        const directionAngles = directions.map((dir, index) => {
+            const angle = Math.atan2(dir.y, dir.x);
+            // 計算與目標方向的角度差（考慮循環）
+            let angleDiff = Math.abs(angle - targetAngle);
+            if (angleDiff > Math.PI) {
+                angleDiff = 2 * Math.PI - angleDiff;
             }
-
-            // 逆時針嘗試
-            const ccwRadians = (Math.atan2(dy, dx) - angle * Math.PI / 180) % (2 * Math.PI);
-            const ccwX = currentX + Math.cos(ccwRadians) * this.joystickSpeed;
-            const ccwY = currentY + Math.sin(ccwRadians) * this.joystickSpeed;
-            if (!this.isLineCollidingWithObstacle(currentX, currentY, ccwX, ccwY)) {
-                return { x: ccwX, y: ccwY };
+            return { index, angleDiff };
+        });
+        
+        // 按角度差排序，優先嘗試接近原始方向的移動
+        directionAngles.sort((a, b) => a.angleDiff - b.angleDiff);
+        
+        // 按角度差從小到大嘗試每個方向
+        for (const { index } of directionAngles) {
+            const dir = directions[index];
+            const moveDistance = this.joystickSpeed;
+            const newX = currentX + dir.x * moveDistance;
+            const newY = currentY + dir.y * moveDistance;
+            
+            if (!this.isLineCollidingWithObstacle(currentX, currentY, newX, newY)) {
+                return { x: newX, y: newY };
             }
         }
-
+        
+        // 如果八個方向都不行，再嘗試更小步長的移動
+        // 這有助於在狹窄通道中移動
+        const halfSpeed = this.joystickSpeed / 2;
+        for (const { index } of directionAngles) {
+            const dir = directions[index];
+            const newX = currentX + dir.x * halfSpeed;
+            const newY = currentY + dir.y * halfSpeed;
+            
+            if (!this.isLineCollidingWithObstacle(currentX, currentY, newX, newY)) {
+                return { x: newX, y: newY };
+            }
+        }
+        
         // 如果所有方向都無法移動，則保持原位
         return { x: currentX, y: currentY };
     }
