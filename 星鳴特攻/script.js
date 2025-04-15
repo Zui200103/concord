@@ -44,12 +44,12 @@ class MazeGame {
         // 添加邊界檢測的邊距
         this.boundaryMargin = 10; // 距離邊緣多少像素時觸發
         // 修改終點屬性，加入原始座標
-        this.endpoint = {
-            originalX: 1800,
-            originalY: 800,
+       this.endpoint = {
+            originalX: 1852,
+            originalY: 798,
             radius: 30,
-            x: 1800,  // 這將被動態更新
-            y: 800,  // 這將被動態更新
+            x: 1852,  // 這將被動態更新
+            y: 798,  // 這將被動態更新
         };
         this.hasReachedEnd = false;
         this.fadeAlpha = 0;
