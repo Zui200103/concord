@@ -77,6 +77,23 @@ class MazeGame {
         this.joystickSpeed = 5; // 調整移動速度
         this.bindJoystickEvents();
 
+        // 添加地點物件
+        this.locations1 = [
+
+        ]
+        this.locations2 = [
+            
+        ]
+        this.locations3 = [
+            
+        ]
+        this.locations4 = [
+         
+        ]
+        this.locations5 = [
+            
+        ]
+
         
         // 添加描述面板的引用
         this.descriptionPanel = document.getElementById('descriptionPanel');
