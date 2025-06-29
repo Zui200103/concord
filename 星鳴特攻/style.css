@@ -11,14 +11,7 @@ body {
     font-family: '微軟正黑體', sans-serif;
 }
 
-.game-container {
-    position: relative;
-    width: 100%;
-    max-width: 800px;  /* 或您想要的最大寬度 */
-    margin: 20px;
-}
-
-canvas {
+.game-canvas {
     background: #f0f0f0;
     display: block;
     touch-action: none;
@@ -100,9 +93,7 @@ button:hover {
 
 /* 響應式設計 */
 @media (max-width: 600px) {
-    .game-container {
-        margin: 10px;
-    }
+    
     
     .game-info {
         flex-direction: column;
